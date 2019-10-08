@@ -7,10 +7,12 @@ import os
 import math
 import glob
 import gzip
+import itertools
 
-from rdkit import Chem
+from rdkit.Chem import AllChem as Chem
 from rdkit.Chem import Descriptors
 from rdkit.Chem import Descriptors3D
+from rdkit.Geometry import Point3D
 
 # mostly inspired from Daylight examples
 methyl = Chem.MolFromSmarts("[CX4H3]")
@@ -28,29 +30,46 @@ for path in glob.iglob('*/*.out.gz'):
         # print(base + '.sdf', " can't find sdf")
         continue
 
-    m = Chem.MolFromMolFile(sdf_file)
+    m = Chem.MolFromMolFile(sdf_file, removeHs=False)
     data = []
-    data.append(file)
+    data.append(file)  # name
     try:
-        data.append(Chem.MolToSmiles(m))
+        data.append(Chem.MolToSmiles(m))  # smiles
     except:
         continue
 
-    vib_file = "{}/{}-vib.out".format(name, base)
-    vib = rot = tr = 0.0 # default entropies
-    with open(vib_file) as f:
-        found = False
-        for line in f:
-            if 'partition function' in line:
-                found = True
+    # read the updated coordinates from the XYZ file
+    # This doesn't work because the atom order is different
+    #xyz_file = sdf_file[:-4] + ".xyz"
+    #if not os.path.isfile(xyz_file):
+    #    continue
+    #conf = m.GetConformer()
+    #print(sdf_file, xyz_file, m.GetNumAtoms())
+    #with open(xyz_file) as f:
+    #    i = 0
+    #    for line in itertools.islice(f, 2, None):
+    #        element, x, y, z = line.split()
+    #        conf.SetAtomPosition(i, Point3D(float(x), float(y), float(z)))
+    #        print(i)
+    #        i += 1
 
-            if found and 'VIB' in line:
-                vib = float(line.split()[5]) * 4.184
-            if found and 'ROT' in line:
-                rot = float(line.split()[4]) * 4.184
-            if found and 'TR' in line:
-                tr = float(line.split()[4]) * 4.184
+    vib_file = "{}/{}-vib.out.gz".format(name, base)
+    vib = rot = tr = 0.0  # default entropies
+    try:
+        with gzip.open(vib_file, 'rt') as f:
+            found = False
+            for line in f:
+                if 'partition function' in line:
+                    found = True
 
+                if found and 'VIB' in line:
+                    vib = float(line.split()[5]) * 4.184
+                if found and 'ROT' in line:
+                    rot = float(line.split()[4]) * 4.184
+                if found and 'TR' in line:
+                    tr = float(line.split()[4]) * 4.184
+    except:
+        continue
 
     with gzip.open(path, 'rt') as f:
         entropy = 0.0
@@ -83,6 +102,11 @@ for path in glob.iglob('*/*.out.gz'):
         data.append(rot)
         data.append(tr)
 
+        data.append(m.GetNumAtoms())
+        data.append(m.GetNumBonds())
+        data.append(Descriptors.ExactMolWt(m))
+#        data.append(Chem.ComputeMolVolume(m))
+
         data.append(Descriptors.NumRotatableBonds(m))
         data.append(len(m.GetSubstructMatches(methyl)))
         data.append(len(m.GetSubstructMatches(amine)))
@@ -92,7 +116,6 @@ for path in glob.iglob('*/*.out.gz'):
         data.append(Descriptors.RingCount(m))
         data.append(Descriptors.NumAromaticRings(m))
 
-        data.append(Descriptors.ExactMolWt(m))
         data.append(Descriptors.MaxAbsPartialCharge(m))
         data.append(Descriptors.MinAbsPartialCharge(m))
         data.append(Descriptors.MaxPartialCharge(m))
