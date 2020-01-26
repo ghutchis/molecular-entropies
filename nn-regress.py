@@ -47,16 +47,19 @@ def getFpArr( fps ):
         X.append(arr)
     return X
 
-def base_model(nBits = 4096, hidden=int(sys.argv[1]), layers=int(sys.argv[2])):
+def base_model(nBits = 4096, hidden=int(sys.argv[1]), layers=int(sys.argv[2]), drop=float(sys.argv[3])):
     elastic=regularizers.l1_l2(l1=0.05, l2=0.05)
     model = Sequential()
     model.add( Dense( input_dim=nBits, units = hidden, kernel_regularizer=elastic ) )
     model.add( Activation( "relu" ) )
+
+    inner = hidden # how many for a given inner layer
     for layer in range(layers):
-        model.add(Dropout(0.2))
+        model.add(Dropout(drop))
+        inner = inner / 2
         model.add( Dense( units=hidden, kernel_regularizer=elastic ) )
         model.add( Activation( "relu" ) )
-    model.add( Dense( 1 ) )
+    model.add( Dense( 1, activation="linear" ) )
     #model.add( Activation( 'relu' ) )
     model.compile( loss="mean_absolute_error",  optimizer="adam" )
     return model
@@ -64,7 +67,7 @@ def base_model(nBits = 4096, hidden=int(sys.argv[1]), layers=int(sys.argv[2])):
 
 if __name__ == '__main__':
 
-    df = pd.read_csv(sys.argv[4])
+    df = pd.read_csv(sys.argv[5])
     print( "Size: {}".format(len(df.index)) )
 
     nBits = 4096
@@ -76,11 +79,13 @@ if __name__ == '__main__':
     trainx, testx, trainy, testy = np.asarray( trainx ), np.asarray( testx ), np.asarray( trainy ), np.asarray( testy )
     es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
     estimator = KerasRegressor( build_fn = base_model,
-                                epochs=int(sys.argv[3]),
-                                batch_size=20,
+                                epochs=int(sys.argv[4]),
+                                shuffle=True,
+                                verbose=0,
                                  )
     history = estimator.fit( trainx, trainy, validation_data=(testx, testy), callbacks=[es] )
+    best_y = estimator.predict( trainx )
     pred_y = estimator.predict( testx )
     r2 = r2_score( testy, pred_y )
     mae = mean_absolute_error( testy, pred_y )
-    print( "KERAS: R^2 : {0:f}, MAE : {1:f}".format( r2, mae ) )
+    print( "KERAS: R^2 : {0:f}, MAE : {1:f} {2:f}".format( r2, mae, mean_absolute_error(trainy, best_y) ) )

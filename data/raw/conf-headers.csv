@@ -1,0 +1,1 @@
+subset,name,SMILES,entropy,vibEntropy,rotEntropy,transEntropy,numAtoms,numBonds,ExactMW,MolVolume,NumRotorsStrict,NumRotors,NumMethyl,NumAmine,NumHydroxy,NumHDonors,NumHAcceptors,NumRings,NumAromaticRings,ConfUnder05,ConfUnder1,ConfUnder15,ConfUnder2,ConfUnder25,ConfUnder3,ConfUnder35,ConfUnder4,ConfUnder45,ConfUnder5,ConfUnder55,ConfUnder6
