@@ -1,7 +1,12 @@
 # molecular-entropies
-Data and analysis scripts for understanding molecular entropies, including conformer flexibility
+Data and analysis scripts for understanding molecular entropies.
 
-Data_Summary_and_Analysis.ipynb: scripts for the data summary, computational time analysis and vibratioanl entropy analysis <br />
-Model.ipynb: scripts for the linear models <br />
-Foldability.ipynb: analysis scripts for intramolecular hydrogen bonds and pi-pi stacking <br />
+All scripts are located in notebook file. The preprocessed data can be found in data file. The raw data can be found in https://chemrxiv.org/articles/preprint/Understanding_Conformational_Entropy_in_Small_Molecules/12671027
 
+## Requirements
+- Numpy
+- Pandas
+- Scipy
+- rdkit
+- py_rdl
+- statsmodels
